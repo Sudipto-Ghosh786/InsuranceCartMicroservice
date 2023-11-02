@@ -30,7 +30,8 @@ public class CartDaoImpl implements CartDao {
     }
 
     @Override
-    public void removeListOfItems(List<Cart> listOfItems) {
-        cartRepository.deleteAll(listOfItems);
+    @Transactional
+    public void removeAllItemsForUser(final Integer userId) {
+        cartRepository.deleteAllByUserId(userId);
     }
 }

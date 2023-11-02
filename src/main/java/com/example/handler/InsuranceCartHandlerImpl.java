@@ -5,10 +5,15 @@ import com.example.dao.OrdersDao;
 import com.example.entity.Cart;
 import com.example.entity.Orders;
 import com.example.model.*;
+import com.example.utils.JsonUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class InsuranceCartHandlerImpl implements InsuranceCartHandler {
@@ -19,11 +24,15 @@ public class InsuranceCartHandlerImpl implements InsuranceCartHandler {
 
     @Override
     public AddPolicyToCartResponse addPolicyToCart(final AddPolicyToCartRequest addPolicyToCartRequest) {
-        cartDao.saveItemToCart(Cart.builder()
-                        .userId(addPolicyToCartRequest.getUserId())
-                        .policyId(addPolicyToCartRequest.getPolicyDetails().getPolicyId())
-                        .policyDetail(addPolicyToCartRequest.getPolicyDetails().toString())
-                .build());
+        try {
+			cartDao.saveItemToCart(Cart.builder()
+			                .userId(addPolicyToCartRequest.getUserId())
+			                .policyId(addPolicyToCartRequest.getPolicyDetails().getPolicyId())
+			                .policyDetail(JsonUtils.toJson(addPolicyToCartRequest.getPolicyDetails()))
+			        .build());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
         return AddPolicyToCartResponse.builder()
                 .isPolicyAddedSuccessfully(Boolean.TRUE).build();
     }
@@ -37,12 +46,15 @@ public class InsuranceCartHandlerImpl implements InsuranceCartHandler {
 
     @Override
     public CreateOrderFromCartResponse createOrderFromCart(final Integer userId) {
-        List<Cart> listOfCartItems = cartDao.getAllItemsForUser(userId);
+        List<Integer> listOfPolicyId = cartDao.getAllItemsForUser(userId)
+        		.stream()
+        		.map(Cart::getPolicyId)
+        		.collect(Collectors.toList());
         ordersDao.addOrder(Orders.builder()
                 .userId(userId)
-                .policyDetails(listOfCartItems.toString())
+                .policyId(listOfPolicyId)
                 .build());
-        cartDao.removeListOfItems(listOfCartItems);
+        cartDao.removeAllItemsForUser(userId);
         return CreateOrderFromCartResponse.builder().isOrderCreated(true).build();
     }
 }

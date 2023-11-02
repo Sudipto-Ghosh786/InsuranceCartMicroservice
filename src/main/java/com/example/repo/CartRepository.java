@@ -18,5 +18,9 @@ public interface CartRepository extends CrudRepository<Cart, Integer> {
     @Modifying
     @Query("SELECT c FROM Cart c WHERE c.userId = :userId")
     public abstract List<Cart> getListOfItemsForUserId(@Param("userId") final Integer userId);
+    
+    @Modifying
+    @Query("DELETE FROM Cart c WHERE c.userId = :userId")
+    public abstract void deleteAllByUserId(@Param("userId") final Integer userId);
 
 }
